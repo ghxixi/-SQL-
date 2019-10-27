@@ -7,3 +7,183 @@ CHECK约束；
 主键约束；
 外键约束。
 本节中将会对这些约束做一一介绍
+
+6.2.1 非空约束
+在定义数据表的时候，默认情况下所有字段都是允许为空值的，如果需要禁止字段为空，那么就需要在创建表的时候显示指定。指定一个字段为空的方式就是在字段定义后增加
+NOT NULL，比如下面的 SQL 语句创建了表 T_Person，并且设置 FNumber 字段不允许为空： 
+MYSQL,MSSQLServer,DB2:
+CREATE TABLE T_Person (FNumber VARCHAR(20) NOT NULL ,FName
+VARCHAR(20),FAge INT)
+Oracle:
+CREATE TABLE T_Person (FNumber VARCHAR2(20) NOT NULL ,FName
+VARCHAR2(20),FAge NUMBER (10))
+
+创建 T_Person 表后我们执行下面的 SQL 语句进行测试：
+INSERT INTO T_Person (FNumber, FName, FAge) VALUES ( NULL , 'kingchou', 20)
+因为在定义 T_Person 表的时候设定字段 FNumber 不能为空，而这个 SQL 语句中将FNumber 字段设置为 NULL，所以在数据库中执行此 SQL 语句后数据库会报出下面错误信
+息：
+不能将值 NULL 插入列 'FNumber'，表 'demo.dbo.T_Person'；列不允许有空值。INSERT 失败。 
+而下面的 SQL 语句则可以正确的执行：
+INSERT INTO T_Person (FNumber, FName, FAge) VALUES ( '1' , 'kingchou', 20)
+非空约束不仅对通过 INSERT 语句插入的数据起作用，而且对于使用 UPDATE 语句进行更新时也起作用。执行下面的 SQL 语句尝试将刚才插入的那条数据的 FNumber
+字段更新为 NULL：
+UPDATE T_Person SET FNumber = NULL
+在数据库中执行此 SQL 语句后数据库会报出下面错误信息：
+不能将值 NULL 插入列 'FNumber'，表 'demo.dbo.T_Person'；列不允许有空值。UPDATE 失败。
+
+6.2.2 唯一约束
+唯一约束又称为 UNIQUE 约束，它用于防止一个特定的列中两个记录具有一致的值，比如在员工信息表中希望防止两个或者多个人具有相同的身份证号码。唯一约束分为单字
+段唯一约束与复合唯一约束两种类型
+如果希望一个字段在表中的值是唯一的，那么就可以将唯一约束设置到这个字段上，设置方式就是在字段定义后增加 UNIQUE，如果是 DB2，那么还要同时将 NOT NULL 约束设
+置到这个字段上。下面的 SQL 语句创建了表 T_Person，并且将唯一约束设置到 FNumber 字段上：
+MYSQL、MSSQLServer：
+CREATE TABLE T_Person (FNumber VARCHAR(20) UNIQUE, FName VARCHAR(20),FAge INT)
+Oracle：
+CREATE TABLE T_Person (FNumber VARCHAR2(20) UNIQUE, FName VARCHAR2(20),FAge NUMBER (10))
+DB2：
+CREATE TABLE T_Person (FNumber VARCHAR(20) NOT NULL UNIQUE, FName VARCHAR(20),FAge INT)
+创建 T_Person 表后我们执行下面的 SQL 语句向数据库中插入初始的一些测试数据：
+INSERT INTO T_Person (FNumber, FName, FAge) VALUES ( '1' , 'kingchou', 20);
+INSERT INTO T_Person (FNumber, FName, FAge) VALUES ( '2' , 'stef', 22);
+INSERT INTO T_Person (FNumber, FName, FAge) VALUES ( '3' , 'long', 26);
+INSERT INTO T_Person (FNumber, FName, FAge) VALUES ( '4' , 'yangzk', 27);
+INSERT INTO T_Person (FNumber, FName, FAge) VALUES ( '5' , 'beansoft', 26);
+
+执行完毕后就能在表 T_Person 中的看到下面的数据：
+FNUMBER FNAME    FAGE
+1       kingchou 20
+2       stef     22
+3       long     26
+4       yangzk   27
+5       beansoft 26
+
+接着执行下面的 SQL 语句进行测试：
+INSERT INTO T_Person (FNumber, FName, FAge) VALUES ( '2' , 'kitty', 20)
+在数据库中执行此 SQL 语句后数据库会报出下面错误信息：
+违反了 UNIQUE KEY 约束 'UQ__T_Person__1A14E395'。不能在对象 'dbo.T_Person' 中插入重复键
+
+唯一约束可以添加到多个字段中，也就是一张表中的唯一约束可以有不止一个，但是这样的单字段唯一约束只能约束“字段 A 的值在表中不重复”、“字段 B 的值在表中不重复”
+等，却不能约束“字段 A 的值在表中可以重复，字段 B 的值在表中也可以重复，但是不能存在字段 A 的值和字段 B 的值同时重复的记录”，这种约束也是有应用场景的：公司中每个
+部门单独进行工号编号，而且每个部门拥有唯一的部门编号，这样每个员工所属的部门编号是可以在表内重复的，而且每个员工的工号也是可以在表内重复的，但是不能存在所
+属的部门编号和每个员工的工号同时重复的员工。复合唯一约束是建立在多个字段上的约束，被约束的字段在不能同时重复。
+定义复合唯一约束需要定义在所有字段列表之后，语法如下：
+CONSTRAINT 约束名 UNIQUE(字段 1,字段 2……字段 n)
+这里的“字段 1,字段 2……字段 n”为组成约束的多个字段，如果只有一个字段则可以看做是单字段唯一约束定义的另外一种形式。通过这种形式定义的唯一约束由于有一个确
+定 的名称，所以可以很容易的通过这个名字来删除这个约束。
+下面的 SQL 语句创建了表 T_Person，并且将在部门编号字段 FDepartmentNumber和工号字段 FNumber 上设置复合唯一约束，并且命名为 unic_dep_num： 
+MYSQL、MSSQLServer：
+CREATE TABLE T_Person (FNumber VARCHAR(20), FDepartmentNumber VARCHAR(20), FName VARCHAR(20),FAge INT, CONSTRAINT unic_dep_num UNIQUE(FNumber,FDepartmentNumber))
+Oracle：
+CREATE TABLE T_Person (FNumber VARCHAR2(20), FDepartmentNumber VARCHAR(20), FName VARCHAR2(20),FAge NUMBER (10), CONSTRAINT unic_dep_num UNIQUE(FNumber,FDepartmentNumber))
+DB2：
+CREATE TABLE T_Person (FNumber VARCHAR(20) NOT NULL, FDepartmentNumber VARCHAR(20) NOT NULL, FName VARCHAR(20),FAge INT, CONSTRAINT unic_dep_num UNIQUE(FNumber,FDepartmentNumber))
+
+创建 T_Person 表后我们执行下面的 SQL 语句向数据库中插入初始的一些测试数据：
+INSERT INTO T_Person (FNumber, FDepartmentNumber,FName, FAge) VALUES ( '1' , 'dev001','kingchou', 20);
+INSERT INTO T_Person (FNumber, FDepartmentNumber,FName, FAge) VALUES ( '2' , 'dev001', 'stef', 22);
+INSERT INTO T_Person (FNumber, FDepartmentNumber,FName, FAge) VALUES ( '1' , 'sales001', 'long', 26);
+INSERT INTO T_Person (FNumber, FDepartmentNumber,FName, FAge) VALUES ( '2' , 'sales001', 'yangzk', 27);
+INSERT INTO T_Person (FNumber, FDepartmentNumber,FName, FAge) VALUES ( '3' , 'sales001', 'beansoft', 26);
+执行完毕后就能在表 T_Person 中的看到下面的数据：
+FNumber   FDepartmentNumber   FName       FAge
+1         dev001              kingchou    20
+2         dev001              stef        22
+1         sales001            long        26
+2         sales001            yangzk      27
+3         sales001            beansoft    26
+可以看到 FNumber 和 FDepartmentNumber 字段的值在表中都有重复的值，但是没有这两个字段同时重复的值，如果这两个字段同时重复的话执行就会失败，执行下面的 SQL 语
+句来验证一下：
+INSERT INTO T_Person (FNumber, FDepartmentNumber,FName, FAge) VALUES ( '2' , 'sales001', 'daxia', 30);
+因为 FNumber 等于'2'且 FDepartmentNumber 等于'sales001'的记录在表中已经存在了，所以在数据库中执行此 SQL 语句后数据库会报出下面错误信息：
+违反了 UNIQUE KEY 约束 'unic_dep_num'。不能在对象 'dbo.T_Person' 中插入重复键。 为了运行后面的例子，请首先将表 T_Person 删除：DROP TABLE T_Person。
+可以在一个表中添加多个复合唯一约束，只要为它们指定不同的名称即可。下面的 SQL语句创建表 T_Person，并且为字段 FNumber 和 FDepartmentNumber 创建一个复合唯
+一约束以及为 FDepartmentNumber 和 FName 创建一个复合唯一约束：
+MYSQL、MSSQLServer：
+CREATE TABLE T_Person (FNumber VARCHAR(20),FDepartmentNumber VARCHAR(20),FName VARCHAR(20),FAge INT, CONSTRAINT unic_1 UNIQUE(FNumber,FDepartmentNumber) , CONSTRAINT unic_2 UNIQUE(FDepartmentNumber, FName))
+Oracle：
+CREATE TABLE T_Person (FNumber VARCHAR2(20), FDepartmentNumber VARCHAR(20), FName VARCHAR2(20),FAge NUMBER (10) , CONSTRAINT unic_1 UNIQUE(FNumber,FDepartmentNumber) , CONSTRAINT unic_2 UNIQUE(FDepartmentNumber, FName))
+DB2：
+CREATE TABLE T_Person (FNumber VARCHAR(20) NOT NULL, FDepartmentNumber VARCHAR(20) NOT NULL,FName VARCHAR(20) NOT NULL,FAge INT NOT NULL, CONSTRAINT unic_1 UNIQUE(FNumber,FDepartmentNumber) , CONSTRAINT unic_2 UNIQUE(FDepartmentNumber, FName))
+
+到目前为止，我们已经讲了如何在创建数据表的时候创建唯一约束了，可是有时我们需要在已经创建好的数据表上添加新的唯一约束，这时就需要使用 ALTER TABLE 语句了，使用
+它 我们可以为一张已经存在的数据表添加新的约束，语法如下：
+ALTER TABLE 表名 ADD CONSTRAINT 唯一约束名 UNIQUE(字段 1,字段 2……字段 n)
+比如下面的 SQL 语句为 T_Person 表添加一个建立在字段 FName 和字段 FAge 上的新的唯一约束：
+ALTER TABLE T_Person ADD CONSTRAINT unic_3 UNIQUE(FName, FAge)
+同样 ALTER TABLE 语句我们也可以删除已经创建好的复合唯一约束，语法如下：ALTER TABLE 表名 DROP CONSTRAINT 唯一约束名 不过上边的语法不能在 MYSQL 中执行，MYSQL 中删除约束的语法为：ALTER TABLE 表名 DROP INDEX 唯一约束名比如下面的 SQL 语句将刚才创建的三个复合唯一约束删除：
+MSQLServer、Oracle、DB2：
+ALTER TABLE T_Person DROP CONSTRAINT unic_1;
+ALTER TABLE T_Person DROP CONSTRAINT unic_2;
+ALTER TABLE T_Person DROP CONSTRAINT unic_3;
+MYSQL：
+ALTER TABLE T_Person DROP INDEX unic_1;
+ALTER TABLE T_Person DROP INDEX unic_2;
+ALTER TABLE T_Person DROP INDEX unic_3;
+
+6.2.3 CHECK 约束
+CHECK 约束会检查输入到记录中的值是否满足一个条件，如果不满足这个条件则对数据库做的修改不会成功。比如，一个人的年龄是不可能为负数的，一个人的入学日期不可
+能 早于出生日期，出厂月份不可能大于 12。可以在 CHECK 条件中使用任意有效的SQL 表达 式，CHECK 约束对于插入、更新等任何对数据进行变化的操作都进行检查。
+在字段定义后添加 CHECK 表达式就可以为这个字段添加 CHECK 约束，几乎所有字段 中都可以添加 CHECK 约束，也就是一张表中可以存在多个 CHECK 约束。
+下面的 SQL 语句创建了一张用于保存人员信息的表 T_Person，其中字段 FNumber 为人员编号，字段 FName 为人员姓名，字段 FAge 为人员年龄，字段 FWorkYear 为人员工龄：
+MYSQL,MSSQLServer,DB2:
+CREATE TABLE T_Person (FNumber VARCHAR(20),FName VARCHAR(20), FAge INT CHECK(FAge >0), FWorkYear INT CHECK(FWorkYear>0))
+Oracle:
+CREATE TABLE T_Person (FNumber VARCHAR2(20),FName VARCHAR2(20), FAge NUMBER (10) CHECK(FAge >0), FWorkYear NUMBER (10) CHECK(FWorkYear>0))
+一个人的年龄和工龄显然不应该为负值的，所以为 FAge 和 FWorkYear 两个字段增加了CHECK 约束“FAge >0”和“FWeight>0”。表创建完毕后执行下面的 SQL 语句进行测试：
+INSERT INTO T_Person(FNumber, FName, FAge, FWorkYear) VALUES('001','John',25,-3)
+因为这里将 FWorkYear 字段设置成了-3，这是违反“CHECK(FWorkYear>0)”这个CHECK约束，所以在数据库中执行此 SQL 语句后数据库会报出下面错误信息：
+INSERT 语句与 CHECK 约束"CK__T_Person__FWorkY__24927208"冲突。该冲突发生于数据库"demo"，表"dbo.T_Person", column 'FWorkYear'。
+除了可以在 CHECK 约束中使用常量表达式之外，还可以在 CHECK 约束中使用函数， 比如人员编号长度要大于 12，那么就需要如下编写建表语句：
+MYSQL,DB2:
+CREATE TABLE T_Person (FNumber VARCHAR(20) CHECK (LENGTH(FNumber)>12), FName VARCHAR(20), FAge INT CHECK(FAge >0),FWorkYear INT CHECK(FWorkYear>0))
+MSSQLServer:
+CREATE TABLE T_Person (FNumber VARCHAR(20) CHECK (LEN(FNumber)>12),FName VARCHAR(20),FAge INT CHECK(FAge >0),FWorkYear INT CHECK(FWorkYear>0))
+Oracle:
+CREATE TABLE T_Person (FNumber VARCHAR2(20) CHECK (LENGTH(FNumber)>12),FName VARCHAR2(20),FAge NUMBER (10) CHECK(FAge >0), FWorkYearNUMBER (10) CHECK(FWorkYear>12))
+表创建完毕后执行下面的 SQL 语句进行测试：
+INSERT INTO T_Person(FNumber, FName, FAge,FWorkYear) VALUES('001','John',25, 3)
+因为这里将 FNumber 字段设置成了'001'，这是违反“CHECK (LENGTH(FNumber)>12)” 这个 CHECK 约束的，所以在数据库中执行此 SQL 语句后数据库会报出下面错误信息：
+INSERT 语句与 CHECK 约束"CK__T_Person__FNumbe__267ABA7A"冲突。该冲突发生于数据库"demo"，表"dbo.T_Person", column 'FNumber'。
+这种直接在列定义中通过 CHECK 子句添加 CHECK 约束的方式的缺点是约束条件不能引用其他列。比如我们想约束“人员的工龄必须小于他的年龄”，那么我们执行下面的 SQL
+语句：
+MYSQL,DB2:
+CREATE TABLE T_Person (FNumber VARCHAR(20), FName VARCHAR(20), FAge INT, FWorkYear INT CHECK(FWorkYear<FAge)) 
+MSSQLServer:
+CREATE TABLE T_Person (FNumber VARCHAR(20), FName VARCHAR(20), FAge INT, FWorkYear INT CHECK(FWorkYear< FAge)) 
+Oracle:
+CREATE TABLE T_Person (FNumber VARCHAR2(20), FName VARCHAR2(20), FAge NUMBER (10), FWorkYear NUMBER (10) CHECK(FWorkYear< FAge))
+执行这个 SQL 语句以后，数据库会报出如下的错误信息：
+表 'T_Person' 的列 'FWorkYear' 的列 CHECK 约束引用了另一列。 出现这个错误的原因是因为在这种方式定义的 CHECK 子句中是不能引用其他列的，如果希望 CHECK 子句中的条件语句中使用其他列，则必须在 CREATE TABLe 语句的末尾使用 CONSTRAINT 关键字定义它。
+语法为：
+CONSTRAINT 约束名 CHECK(约束条件)
+重新编写上述的 SQL 语句，如下：
+MYSQL,DB2:
+CREATE TABLE T_Person (FNumber VARCHAR(20), FName VARCHAR(20), FAge INT, FWorkYear INT, CONSTRAINT ck_1 CHECK(FWorkYear<FAge)) 
+MSSQLServer:
+CREATE TABLE T_Person (FNumber VARCHAR(20),FName VARCHAR(20),FAge INT,FWorkYear INT , CONSTRAINT ck_1 CHECK(FWorkYear<FAge))
+Oracle:
+CREATE TABLE T_Person (FNumber VARCHAR2(20),FName VARCHAR2(20),FAge NUMBER (10),FWorkYear NUMBER (10) , CONSTRAINT ck_1 CHECK(FWorkYear< FAge))
+表创建完毕后执行下面的 SQL 语句进行测试：
+INSERT INTO T_Person(FNumber, FName, FAge,FWorkYear) VALUES('001','John',25, 30)
+因 为 这 里 将 FWorkYear 字 段 设 置 成 了 30 ， 比 如 年 龄 25 岁 还 大 ， 这 是 违 反“CHECK(FWorkYear< FAge)”这个 CHECK 约束的，所以在数据库中执行此 SQL 语句后数据库会报出下面错误信息：INSERT 语句与 CHECK 约束"ck_1"冲突。该冲突发生于数据库"demo"，表"dbo.T_Person"。
+可以看到，这种定义 CHECK 约束的方式几乎与定义一个复合唯一约束的方式一致。
+同样，可以通过 ALTER TABLE 的方式为已经存在的数据表添加 CHECK 约束。下面的 SQL 语句在 T_Person 上添加新的约束：
+ALTER TABLE T_Person ADD CONSTRAINT ck_2 CHECK(FAge>14)
+上面的 SQL 语句中为约束指定了显式的名称，所以可以通过下面的 SQL 语句将CHECK 约束 ck_2 删除（这个语句在 MYSQL 中无效）：
+ALTER TABLE T_Person DROP CONSTRAINT ck_2;
+
+6.2.4 主键约束
+第一范式要求每张表都要有主键，因此主键约束是非常重要的，而且主键约束是外键
+关 联的基础条件。主键约束为表之间的关联提供了链接点。
+主键必须能够唯一标识一条记录，也就是主键字段中的值必须是唯一的，而且不能包
+含 NULL 值。从这种意义上来说，主键约束是 UNIQUE 约束和非空约束的组合。虽然
+一张表 中可以有多个 UNIQUE 约束和非空约束，但是每个表中却只能有一个主键约束。
+在 CREATE TABLE 语句中定义主键约束非常简单，和 UNIQUE 约束和非空约束非常类
+似，只要在字段定义后添加 PRIMARY KEY 关键字即可。不过在 DB2 中，主键列也必须显
+式的定义为 NOT NULL。下面的代码创建了员工信息表，并且将字段 FNumber 设置为主键
+字段：
+MYSQL、MSSQLServer:
+
+
+
+
