@@ -1,0 +1,7 @@
+# -SQL-
+ALter TABLE T_PERSON ;
+<code>CREATE TABLE T_Person (FNumber VARCHAR(20) NOT NULL ,FName
+VARCHAR(20),FAge INT)
+Oracle:
+CREATE TABLE T_Person (FNumber VARCHAR2(20) NOT NULL ,FName
+VARCHAR2(20),FAge NUMBER (10))</code>
